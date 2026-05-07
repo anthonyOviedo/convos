@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { randomUUID } from 'crypto'
 import pool from '../db.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { notifyNewSession, notifySessionResponse } from '../services/notify.js'
+import { createMeetEvent } from '../services/googleMeet.js'
 
 const router = Router()
 
@@ -119,7 +119,17 @@ router.patch('/:id', requireAuth, async (req, res) => {
   )
   if (!sessionRes.rows.length) return res.status(404).json({ error: 'Sesión no encontrada' })
 
-  const meet_link = status === 'accepted' ? `https://meet.jit.si/conVos-${randomUUID()}` : null
+  let meet_link = null
+  if (status === 'accepted') {
+    const orig = sessionRes.rows[0]
+    const clientForMeet = { id: orig.client_user_id, name: orig.client_name, email: orig.client_email }
+    const { meetLink } = await createMeetEvent({
+      session: { scheduled_at: orig.scheduled_at, duration_minutes: orig.duration_minutes },
+      client: clientForMeet,
+      psychologist: me,
+    })
+    meet_link = meetLink
+  }
 
   const { rows } = await pool.query(
     `UPDATE convos.sessions
@@ -129,8 +139,8 @@ router.patch('/:id', requireAuth, async (req, res) => {
     [status, meet_link, rejection_reason ?? null, req.params.id]
   )
   const session = rows[0]
-  const orig = sessionRes.rows[0]
-  const client = { id: orig.client_user_id, name: orig.client_name, email: orig.client_email }
+  const { client_user_id, client_name, client_email } = sessionRes.rows[0]
+  const client = { id: client_user_id, name: client_name, email: client_email }
 
   notifySessionResponse({ session, client, psychologist: me }).catch(() => {})
 
