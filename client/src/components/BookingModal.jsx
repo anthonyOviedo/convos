@@ -89,10 +89,9 @@ function CalendarPicker({ availableDates, selectedDate, onSelect }) {
 
 export default function BookingModal({ psych, onClose, onBooked }) {
   const today = new Date()
-  const availableDates = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(today); d.setDate(d.getDate() + i + 1); return toDateStr(d)
-  })
 
+  const [psychAvail, setPsychAvail] = useState([])   // availability rows from API
+  const [availableDates, setAvailableDates] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
   const [availSlots, setAvailSlots] = useState([])
   const [bookedTimes, setBookedTimes] = useState([])
@@ -101,24 +100,47 @@ export default function BookingModal({ psych, onClose, onBooked }) {
   const [sending, setSending] = useState(false)
   const [err, setErr] = useState(null)
 
+  // Load psychologist availability once on mount
+  useEffect(() => {
+    fetch(`/api/availability/${psych.id}`)
+      .then(r => r.json())
+      .then(({ slots }) => {
+        setPsychAvail(slots ?? [])
+        // Build the set of available days-of-week
+        const availDows = new Set((slots ?? []).map(s => s.day_of_week))
+        // Filter next 60 days to only those whose dow is in the set
+        const dates = []
+        for (let i = 1; i <= 60 && dates.length < 30; i++) {
+          const d = new Date(today)
+          d.setDate(d.getDate() + i)
+          if (availDows.has(d.getDay())) dates.push(toDateStr(d))
+        }
+        setAvailableDates(dates)
+      })
+      .catch(() => {})
+  }, [psych.id])
+
+  // When a date is selected, compute time slots and already-booked times
   useEffect(() => {
     if (!selectedDate) return
     const dow = new Date(selectedDate + 'T00:00:00').getDay()
-    Promise.all([
-      fetch(`/api/availability/${psych.id}`).then(r => r.json()),
-      fetch(`/api/sessions?psychologist_id=${psych.id}`).then(r => r.json()),
-    ]).then(([avRes, sesRes]) => {
-      const avRow = (avRes.slots ?? []).find(s => s.day_of_week === dow)
-      if (!avRow) { setAvailSlots([]); setBookedTimes([]); return }
-      const slots = generateSlots(avRow.start_time.substring(0, 5), avRow.end_time.substring(0, 5), avRow.slot_minutes)
-      setAvailSlots(slots)
-      const booked = (sesRes.sessions ?? [])
-        .filter(s => s.scheduled_at.substring(0, 10) === selectedDate && !['rejected', 'cancelled'].includes(s.status))
-        .map(s => new Date(s.scheduled_at).toISOString().substring(11, 16))
-      setBookedTimes(booked)
-    }).catch(() => {})
+    const avRow = psychAvail.find(s => s.day_of_week === dow)
+    if (!avRow) { setAvailSlots([]); setBookedTimes([]); setSelectedTime(null); return }
+
+    const slots = generateSlots(avRow.start_time.substring(0, 5), avRow.end_time.substring(0, 5), avRow.slot_minutes)
+    setAvailSlots(slots)
+
+    fetch(`/api/sessions?psychologist_id=${psych.id}`)
+      .then(r => r.json())
+      .then(({ sessions }) => {
+        const booked = (sessions ?? [])
+          .filter(s => s.scheduled_at.substring(0, 10) === selectedDate && !['rejected', 'cancelled'].includes(s.status))
+          .map(s => new Date(s.scheduled_at).toISOString().substring(11, 16))
+        setBookedTimes(booked)
+      })
+      .catch(() => {})
     setSelectedTime(null)
-  }, [selectedDate, psych.id])
+  }, [selectedDate, psychAvail, psych.id])
 
   const submit = async () => {
     if (!selectedDate || !selectedTime) return
