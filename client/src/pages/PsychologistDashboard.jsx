@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext.jsx'
 import AvailabilityEditor from '../components/AvailabilityEditor.jsx'
+import RecordViewer from '../components/RecordViewer.jsx'
 
 const STATUS_LABEL = { pending: 'Pendiente', accepted: 'Aceptada ✓', rejected: 'Rechazada' }
 const STATUS_COLOR = { pending: '#d97706', accepted: '#059669', rejected: '#dc2626' }
@@ -24,7 +25,7 @@ function fmtDt(iso) {
   })
 }
 
-function SessionCard({ s, onRespond }) {
+function SessionCard({ s, onRespond, onViewRecord }) {
   const [rejectOpen, setRejectOpen] = useState(false)
   const [reason, setReason] = useState('')
 
@@ -79,6 +80,14 @@ function SessionCard({ s, onRespond }) {
             </button>
           </div>
         )}
+        <button
+          className="dash-action-btn"
+          style={{ background: 'rgba(3,105,161,0.1)', color: 'var(--c-primary)', display: 'flex', alignItems: 'center', gap: 5 }}
+          onClick={() => onViewRecord(s.client_user_id, s.client_name)}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Ver expediente
+        </button>
       </div>
     </div>
   )
@@ -90,6 +99,7 @@ export default function PsychologistDashboard() {
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pending')
+  const [viewingRecord, setViewingRecord] = useState(null)
 
   const load = async () => {
     const [rRes, sRes] = await Promise.all([
@@ -219,6 +229,16 @@ export default function PsychologistDashboard() {
                           </button>
                         </div>
                       )}
+                      {r.status === 'accepted' && (
+                        <button
+                          className="dash-action-btn"
+                          style={{ background: 'rgba(3,105,161,0.1)', color: 'var(--c-primary)', display: 'flex', alignItems: 'center', gap: 5 }}
+                          onClick={() => setViewingRecord({ clientUserId: r.client_user_id, clientName: r.client_name })}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          Ver expediente
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -238,7 +258,12 @@ export default function PsychologistDashboard() {
             ) : (
               <div className="requests-list">
                 {sessions.map(s => (
-                  <SessionCard key={s.id} s={s} onRespond={respondSession} />
+                  <SessionCard
+                    key={s.id}
+                    s={s}
+                    onRespond={respondSession}
+                    onViewRecord={(clientUserId, clientName) => setViewingRecord({ clientUserId, clientName })}
+                  />
                 ))}
               </div>
             )}
@@ -252,6 +277,14 @@ export default function PsychologistDashboard() {
           </section>
         )}
       </main>
+
+      {viewingRecord && (
+        <RecordViewer
+          clientUserId={viewingRecord.clientUserId}
+          clientName={viewingRecord.clientName}
+          onClose={() => setViewingRecord(null)}
+        />
+      )}
     </div>
   )
 }
