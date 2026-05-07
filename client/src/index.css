@@ -29,6 +29,13 @@
   --shadow-card: 0 4px 24px rgba(3, 105, 161, 0.09);
   --shadow-btn:  0 4px 14px rgba(3, 105, 161, 0.28);
   --shadow-nav:  0 2px 20px rgba(3, 105, 161, 0.10);
+
+  /* Surface = card/panel background. Defaults to white in light mode. */
+  --c-surface:        var(--c-white);
+  --c-surface-soft:   var(--c-bg-soft);
+  --c-nav-bg:         rgba(224, 242, 254, 0.85);
+  --c-nav-bg-mobile:  rgba(224, 242, 254, 0.97);
+  --c-overlay:        rgba(15, 23, 42, 0.4);
 }
 
 html { scroll-behavior: smooth; }
@@ -53,7 +60,7 @@ img { max-width: 100%; display: block; }
 /* ── Navbar ─────────────────────────────────────────── */
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(224, 242, 254, 0.85);
+  background: var(--c-nav-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--c-border);
@@ -113,7 +120,7 @@ img { max-width: 100%; display: block; }
   padding: 16px 24px 20px;
   border-top: 1px solid var(--c-border);
   gap: 12px;
-  background: rgba(224, 242, 254, 0.97);
+  background: var(--c-nav-bg-mobile);
 }
 .nav__mobile a { font-weight: 500; color: var(--c-muted); padding: 8px 0; display: block; }
 .nav__mobile.open { display: flex; }
@@ -696,7 +703,7 @@ img { max-width: 100%; display: block; }
 /* ── Contact modal ───────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 200;
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--c-overlay);
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
@@ -733,3 +740,166 @@ img { max-width: 100%; display: block; }
   .ob-card { padding: 28px 20px 32px; }
   .ob-row { grid-template-columns: 1fr; }
 }
+
+/* ── Theme toggle button ─────────────────────────────── */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: var(--r-full);
+  background: var(--c-surface);
+  color: var(--c-primary);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: background 150ms, color 150ms, transform 150ms, box-shadow 150ms;
+}
+.theme-toggle:hover {
+  color: var(--c-primary-h);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(3, 105, 161, 0.18);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.theme-toggle--floating {
+  position: fixed; right: 20px; bottom: 20px; z-index: 250;
+  width: 48px; height: 48px;
+}
+
+/* ── Dark theme ──────────────────────────────────────── */
+[data-theme="dark"] {
+  --c-bg:        #0b1220;
+  --c-bg-soft:   #111c33;
+  --c-sky:       #1e3a8a;
+  --c-primary:   #38bdf8;
+  --c-primary-h: #7dd3fc;
+  --c-accent:    #c4b5fd;
+  --c-green:     #34d399;
+  --c-green-h:   #6ee7b7;
+  --c-text:      #e2e8f0;
+  --c-muted:     #94a3b8;
+  --c-light:     #475569;
+  --c-border:    rgba(148, 163, 184, 0.18);
+
+  --c-surface:        #152238;
+  --c-surface-soft:   #1a2942;
+  --c-nav-bg:         rgba(11, 18, 32, 0.85);
+  --c-nav-bg-mobile:  rgba(11, 18, 32, 0.97);
+  --c-overlay:        rgba(0, 0, 0, 0.6);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --shadow-btn:  0 4px 14px rgba(56, 189, 248, 0.25);
+  --shadow-nav:  0 2px 20px rgba(0, 0, 0, 0.55);
+}
+
+/* Surfaces that hardcode --c-white as background need to follow the theme */
+[data-theme="dark"] .hero__card-main,
+[data-theme="dark"] .step,
+[data-theme="dark"] .feature-card,
+[data-theme="dark"] .therapist-card,
+[data-theme="dark"] .pricing-card,
+[data-theme="dark"] .faq-item,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .dash__sidebar,
+[data-theme="dark"] .stats-bar,
+[data-theme="dark"] .ob-card,
+[data-theme="dark"] .badge-float,
+[data-theme="dark"] .request-card {
+  background: var(--c-surface);
+}
+
+[data-theme="dark"] .testimonial-card {
+  background: rgba(21, 34, 56, 0.65);
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+[data-theme="dark"] .ob-input {
+  background: var(--c-surface-soft);
+  color: var(--c-text);
+}
+
+[data-theme="dark"] .dash__profile-card {
+  background: var(--c-surface-soft);
+}
+
+/* On dark BG the bright primary needs dark text on solid buttons */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .nav__btn-solid,
+[data-theme="dark"] .therapist-card__btn,
+[data-theme="dark"] .ob-btn,
+[data-theme="dark"] .pricing-btn--primary {
+  color: #0b1220;
+}
+
+[data-theme="dark"] .nav__btn-ghost,
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .pricing-btn--ghost {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+[data-theme="dark"] .nav__btn-ghost:hover,
+[data-theme="dark"] .btn-secondary:hover,
+[data-theme="dark"] .pricing-btn--ghost:hover {
+  color: #0b1220;
+  background: var(--c-primary);
+}
+
+[data-theme="dark"] .step__num {
+  color: #0b1220;
+}
+
+[data-theme="dark"] .tag {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--c-primary);
+}
+
+[data-theme="dark"] .session-pill {
+  background: rgba(52, 211, 153, 0.14);
+}
+
+[data-theme="dark"] .cta-banner {
+  background: linear-gradient(135deg, #0c4a6e 0%, #082338 100%);
+}
+
+[data-theme="dark"] .footer {
+  background: #060d18;
+}
+
+[data-theme="dark"] .faq-item__q:hover {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+[data-theme="dark"] .ob-role {
+  background: var(--c-surface-soft);
+  border-color: var(--c-border);
+}
+[data-theme="dark"] .ob-role:hover,
+[data-theme="dark"] .ob-role--active {
+  border-color: var(--c-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+[data-theme="dark"] .dash__nav-item:hover {
+  background: var(--c-bg-soft);
+  color: var(--c-text);
+}
+[data-theme="dark"] .dash__nav-item--active {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--c-primary);
+}
+
+[data-theme="dark"] .dash-action-btn--accept {
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--c-green);
+}
+[data-theme="dark"] .dash-action-btn--reject {
+  background: rgba(248, 113, 113, 0.14);
+  color: #f87171;
+}
+
+[data-theme="dark"] .modal-close:hover {
+  color: var(--c-text);
+  background: var(--c-bg-soft);
+}
+
