@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './AuthContext.jsx'
 
 const S = {
-  page: { fontFamily: 'system-ui, sans-serif', maxWidth: 520, margin: '80px auto', padding: '0 24px' },
+  page: { fontFamily: 'system-ui, sans-serif', maxWidth: 520, margin: '80px auto', padding: '0 24px', minHeight: '100vh' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 },
   title: { fontSize: '2rem', fontWeight: 700, margin: 0 },
   btn: {
