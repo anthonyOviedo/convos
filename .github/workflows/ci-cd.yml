@@ -37,18 +37,25 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: SSH deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            set -e
-            cd /home/tony/Desktop/convos
-            git pull origin main
-            bash build.sh
-            podman compose -f podman-compose.yml down --remove-orphans || true
-            podman compose -f podman-compose.yml up -d
-            echo "✓ conVos deployado — $(git rev-parse --short HEAD)"
+      - name: Deploy via SSH
+        env:
+          SSH_CONN: ${{ secrets.SSH_CONN }}
+        run: |
+          # Formato del secret: user:pass@host:port
+          USER="${SSH_CONN%%:*}"
+          REST="${SSH_CONN#*:}"
+          PASS="${REST%%@*}"
+          HOSTPORT="${REST#*@}"
+          HOST="${HOSTPORT%%:*}"
+          PORT="${HOSTPORT##*:}"
+
+          sudo apt-get install -y sshpass -q
+
+          sshpass -p "$PASS" ssh -o StrictHostKeyChecking=no -p "$PORT" "$USER@$HOST" \
+            'set -e
+             cd /home/tony/Desktop/convos
+             git pull origin main
+             bash build.sh
+             podman compose -f podman-compose.yml down --remove-orphans || true
+             podman compose -f podman-compose.yml up -d
+             echo "✓ conVos deployado — $(git rev-parse --short HEAD)"'
