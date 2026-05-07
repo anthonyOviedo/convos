@@ -7,6 +7,8 @@ import authRouter from './routes/auth.js'
 import usersRouter from './routes/users.js'
 import psychologistsRouter from './routes/psychologists.js'
 import contactRouter from './routes/contact.js'
+import availabilityRouter from './routes/availability.js'
+import sessionsRouter from './routes/sessions.js'
 import { requireAuth } from './middleware/requireAuth.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -21,6 +23,8 @@ app.use('/api/auth', authRouter)
 app.use('/api/me', usersRouter)
 app.use('/api/psychologists', psychologistsRouter)
 app.use('/api/contact', contactRouter)
+app.use('/api/availability', availabilityRouter)
+app.use('/api/sessions', sessionsRouter)
 
 app.get('/api/hello', requireAuth, async (_req, res) => {
   try {
