@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import pool from './db.js'
 import authRouter from './routes/auth.js'
+import usersRouter from './routes/users.js'
+import psychologistsRouter from './routes/psychologists.js'
+import contactRouter from './routes/contact.js'
 import { requireAuth } from './middleware/requireAuth.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -15,12 +18,14 @@ app.use(cookieParser())
 app.use(express.static(join(__dirname, 'public')))
 
 app.use('/api/auth', authRouter)
+app.use('/api/me', usersRouter)
+app.use('/api/psychologists', psychologistsRouter)
+app.use('/api/contact', contactRouter)
 
 app.get('/api/hello', requireAuth, async (_req, res) => {
   try {
     const { rows } = await pool.query('SELECT message FROM convos.greetings LIMIT 1')
-    const message = rows[0]?.message ?? 'Hola desde conVos'
-    res.json({ message, desde_db: rows.length > 0 })
+    res.json({ message: rows[0]?.message ?? 'Hola desde conVos', desde_db: rows.length > 0 })
   } catch {
     res.json({ message: 'Hola desde conVos', desde_db: false })
   }
