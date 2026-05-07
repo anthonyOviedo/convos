@@ -8,29 +8,27 @@ import PsychologistDashboard from './pages/PsychologistDashboard.jsx'
 function AppRoutes() {
   const { user, profile } = useAuth()
 
-  // Still loading auth state
   if (user === undefined || (user && profile === undefined)) {
     return <div className="dash-loading">Cargando…</div>
   }
 
-  // Not logged in — show landing
+  let content
   if (!user) {
-    return (
-      <>
-        <Navbar />
-        <Landing />
-      </>
-    )
+    content = <Landing />
+  } else if (!profile) {
+    content = <Onboarding />
+  } else if (profile.role === 'psychologist') {
+    content = <PsychologistDashboard />
+  } else {
+    content = <ClientDashboard />
   }
 
-  // Logged in but no profile yet — onboarding
-  if (!profile) {
-    return <Onboarding />
-  }
-
-  // Routed to dashboard by role
-  if (profile.role === 'psychologist') return <PsychologistDashboard />
-  return <ClientDashboard />
+  return (
+    <>
+      <Navbar />
+      {content}
+    </>
+  )
 }
 
 export default function App() {
