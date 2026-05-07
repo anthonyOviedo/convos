@@ -1,0 +1,19 @@
+services:
+  web:
+    image: localhost/convos:localatest
+    container_name: convos
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3500:3000"
+    networks:
+      - milocalhost
+
+networks:
+  milocalhost:
+    name: milocalhost_milocalhost
+    external: true
