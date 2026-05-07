@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import pool from '../db.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { notifyContactRequest, notifyContactResponse } from '../services/notify.js'
 
 const router = Router()
 
@@ -22,6 +23,8 @@ router.post('/', requireAuth, async (req, res) => {
        RETURNING *`,
       [me.id, psychologist_user_id, message ?? null]
     )
+    const psychRes = await pool.query('SELECT * FROM convos.users WHERE id = $1', [psychologist_user_id])
+    notifyContactRequest({ request: rows[0], client: me, psychologist: psychRes.rows[0] }).catch(() => {})
     res.json({ ok: true, request: rows[0] })
   } catch (err) {
     console.error('[contact] error:', err.message)
@@ -81,6 +84,10 @@ router.patch('/:id', requireAuth, async (req, res) => {
     [status, req.params.id, me.id]
   )
   if (!rows.length) return res.status(404).json({ error: 'Solicitud no encontrada' })
+
+  const clientRes = await pool.query('SELECT * FROM convos.users WHERE id = $1', [rows[0].client_user_id])
+  notifyContactResponse({ request: rows[0], client: clientRes.rows[0], psychologist: me }).catch(() => {})
+
   res.json({ ok: true, request: rows[0] })
 })
 
