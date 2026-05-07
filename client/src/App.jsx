@@ -1,5 +1,7 @@
 import { AuthProvider, useAuth } from './AuthContext.jsx'
+import { ThemeProvider } from './ThemeContext.jsx'
 import Navbar from './components/Navbar.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 import Landing from './pages/Landing.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import ClientDashboard from './pages/ClientDashboard.jsx'
@@ -33,8 +35,11 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppRoutes />
+        <ThemeToggle className="theme-toggle--floating" />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
