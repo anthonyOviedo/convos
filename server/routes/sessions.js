@@ -53,8 +53,16 @@ router.post('/', requireAuth, async (req, res) => {
   const dt = new Date(scheduled_at)
   if (isNaN(dt.getTime())) return res.status(400).json({ error: 'Fecha inválida' })
 
-  const dayOfWeek = dt.getUTCDay()
-  const timeStr = dt.toISOString().substring(11, 16)
+  // Resolve day-of-week and time in Costa Rica timezone (UTC-6, no DST)
+  const crParts = new Intl.DateTimeFormat('en', {
+    timeZone: 'America/Costa_Rica',
+    weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: false,
+  }).formatToParts(dt)
+  const get = type => crParts.find(p => p.type === type)?.value
+  const DOW = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+  const dayOfWeek = DOW[get('weekday')]
+  const h = parseInt(get('hour')) % 24   // hour12:false can return 24 at midnight
+  const timeStr = `${String(h).padStart(2,'0')}:${get('minute')}`
 
   const availRes = await pool.query(
     `SELECT * FROM convos.psychologist_availability

@@ -1,10 +1,33 @@
 import { useEffect, useState } from 'react'
 
+// Returns YYYY-MM-DD using LOCAL date parts (never UTC, avoids midnight shift)
 function toDateStr(d) {
-  return d.toISOString().substring(0, 10)
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', hour12: true })
+// Slot times come from the DB as "HH:MM" already in CR time — just format directly
+function fmtTime(crTime) {
+  const [h, m] = crTime.split(':').map(Number)
+  const ampm = h < 12 ? 'a. m.' : 'p. m.'
+  const h12  = h % 12 || 12
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`
+}
+// Convert a stored UTC ISO timestamp → "HH:MM" in Costa Rica time
+function utcToCRTime(iso) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Costa_Rica',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(new Date(iso))
+  const get = t => parts.find(p => p.type === t).value
+  return `${get('hour')}:${get('minute')}`
+}
+// Convert a stored UTC ISO timestamp → "YYYY-MM-DD" in Costa Rica time
+function utcToCRDate(iso) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Costa_Rica',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(iso))
+  const get = t => parts.find(p => p.type === t).value
+  return `${get('year')}-${get('month')}-${get('day')}`
 }
 function generateSlots(startTime, endTime, minutes) {
   const slots = []
@@ -134,8 +157,8 @@ export default function BookingModal({ psych, onClose, onBooked }) {
       .then(r => r.json())
       .then(({ sessions }) => {
         const booked = (sessions ?? [])
-          .filter(s => s.scheduled_at.substring(0, 10) === selectedDate && !['rejected', 'cancelled'].includes(s.status))
-          .map(s => new Date(s.scheduled_at).toISOString().substring(11, 16))
+          .filter(s => !['rejected', 'cancelled'].includes(s.status) && utcToCRDate(s.scheduled_at) === selectedDate)
+          .map(s => utcToCRTime(s.scheduled_at))
         setBookedTimes(booked)
       })
       .catch(() => {})
@@ -145,7 +168,8 @@ export default function BookingModal({ psych, onClose, onBooked }) {
   const submit = async () => {
     if (!selectedDate || !selectedTime) return
     setSending(true); setErr(null)
-    const scheduled_at = new Date(`${selectedDate}T${selectedTime}:00Z`).toISOString()
+    // -06:00 = Costa Rica (no DST)
+    const scheduled_at = new Date(`${selectedDate}T${selectedTime}:00-06:00`).toISOString()
     try {
       const res = await fetch('/api/sessions', {
         method: 'POST',
@@ -178,7 +202,6 @@ export default function BookingModal({ psych, onClose, onBooked }) {
               : (
                 <div className="booking-times">
                   {availSlots.map(t => {
-                    const iso = new Date(`${selectedDate}T${t}:00Z`).toISOString()
                     const isBooked = bookedTimes.includes(t)
                     return (
                       <button
@@ -187,7 +210,7 @@ export default function BookingModal({ psych, onClose, onBooked }) {
                         className={`booking-time-btn${selectedTime === t ? ' booking-time-btn--active' : ''}${isBooked ? ' booking-time-btn--taken' : ''}`}
                         onClick={() => !isBooked && setSelectedTime(t)}
                       >
-                        {fmtTime(iso)}
+                        {fmtTime(t)}
                       </button>
                     )
                   })}
